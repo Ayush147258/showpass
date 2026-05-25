@@ -1,0 +1,324 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ATTENDEE
+  ORGANISER
+  ADMIN
+}
+
+enum EventCategory {
+  MUSIC
+  COLLEGE_FEST
+  TECH
+  COMEDY
+  FITNESS
+  FOOD
+  WORKSHOP
+  SPORTS
+  OTHER
+}
+
+enum TicketTierType {
+  FREE
+  GENERAL
+  VIP
+  EARLY_BIRD
+  PREMIUM
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  TICKET_CONFIRMED
+  EVENT_REMINDER
+  REFUND_APPROVED
+  REFUND_REJECTED
+  EVENT_CANCELLED
+  CHECK_IN_OPEN
+  NEW_REVIEW
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  phone         String?
+  role          UserRole  @default(ATTENDEE)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  events           Event[]            @relation("OrganiserEvents")
+  orders           Order[]
+  reviews          Review[]
+  bookmarks        Bookmark[]
+  notifications    Notification[]
+  organiserProfile OrganiserProfile?
+  checkIns         CheckIn[]          @relation("ScannedBy")
+  aiUsageLogs      AiUsageLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model OrganiserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  orgName     String
+  logoUrl     String?
+  bio         String?  @db.Text
+  website     String?
+  isPro       Boolean  @default(false)
+  totalEarned Float    @default(0)
+  bankAccount String?
+  ifscCode    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id          String        @id @default(cuid())
+  organiserId String
+  title       String
+  slug        String        @unique
+  description String        @db.Text
+  bannerUrl   String?
+  category    EventCategory @default(OTHER)
+  startAt     DateTime
+  endAt       DateTime
+  venue       String
+  city        String
+  address     String?
+  lat         Float?
+  lng         Float?
+  isPublished Boolean       @default(false)
+  isFeatured  Boolean       @default(false)
+  isOnline    Boolean       @default(false)
+  onlineUrl   String?
+  tags        String[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  organiser     User           @relation("OrganiserEvents", fields: [organiserId], references: [id])
+  ticketTiers   TicketTier[]
+  orders        Order[]
+  reviews       Review[]
+  bookmarks     Bookmark[]
+  discountCodes DiscountCode[]
+}
+
+model TicketTier {
+  id               String         @id @default(cuid())
+  eventId          String
+  name             String
+  type             TicketTierType @default(GENERAL)
+  description      String?
+  price            Float
+  capacity         Int
+  sold             Int            @default(0)
+  earlyBirdPrice   Float?
+  earlyBirdEndsAt  DateTime?
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  tickets    Ticket[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  buyerId         String
+  eventId         String
+  totalAmount     Float
+  platformFee     Float
+  status          OrderStatus @default(PENDING)
+  paymentId       String?
+  paymentProvider String?
+  discountCode    String?
+  discountAmount  Float       @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  buyer          User            @relation(fields: [buyerId], references: [id])
+  event          Event           @relation(fields: [eventId], references: [id])
+  orderItems     OrderItem[]
+  tickets        Ticket[]
+  refundRequests RefundRequest[]
+}
+
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  tierId     String
+  quantity   Int
+  unitPrice  Float
+
+  order Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tier  TicketTier @relation(fields: [tierId], references: [id])
+}
+
+model Ticket {
+  id             String   @id @default(cuid())
+  orderId        String
+  tierId         String
+  attendeeName   String
+  attendeeEmail  String
+  qrCode         String   @unique
+  ticketRef      String   @unique
+  isCheckedIn    Boolean  @default(false)
+  checkedInAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  order    Order      @relation(fields: [orderId], references: [id])
+  tier     TicketTier @relation(fields: [tierId], references: [id])
+  checkIns CheckIn[]
+}
+
+model CheckIn {
+  id         String   @id @default(cuid())
+  ticketId   String
+  scannedBy  String
+  scannedAt  DateTime @default(now())
+  deviceInfo String?
+
+  ticket  Ticket @relation(fields: [ticketId], references: [id])
+  scanner User   @relation("ScannedBy", fields: [scannedBy], references: [id])
+}
+
+model DiscountCode {
+  id        String   @id @default(cuid())
+  eventId   String
+  code      String
+  type      String   @default("PERCENT")
+  value     Float
+  maxUses   Int
+  usedCount Int      @default(0)
+  expiresAt DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, code])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  rating    Int
+  body      String?  @db.Text
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefundRequest {
+  id          String       @id @default(cuid())
+  orderId     String
+  reason      String       @db.Text
+  status      RefundStatus @default(PENDING)
+  processedAt DateTime?
+  processedBy String?
+  createdAt   DateTime     @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+model AiUsageLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  feature     String
+  provider    String
+  tokensUsed  Int      @default(0)
+  success     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}

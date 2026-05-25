@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* ── CSS Variables ── */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 215 28% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+    --primary: 16 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 95%;
+    --secondary-foreground: 215 28% 17%;
+    --muted: 215 20% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 16 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 20% 90%;
+    --input: 215 20% 90%;
+    --ring: 16 100% 60%;
+    --radius: 0.75rem;
+
+    /* SHOWPASS brand tokens */
+    --sp-navy: #0A1628;
+    --sp-accent: #FF6B35;
+    --sp-teal: #00D4AA;
+    --sp-purple: #7B2FBE;
+    --sp-gold: #FFB800;
+  }
+
+  .dark {
+    --background: 215 60% 8%;
+    --foreground: 215 20% 95%;
+    --card: 215 50% 11%;
+    --card-foreground: 215 20% 95%;
+    --popover: 215 50% 11%;
+    --popover-foreground: 215 20% 95%;
+    --primary: 16 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 40% 16%;
+    --secondary-foreground: 215 20% 95%;
+    --muted: 215 40% 14%;
+    --muted-foreground: 215 16% 60%;
+    --accent: 16 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 40% 18%;
+    --input: 215 40% 18%;
+    --ring: 16 100% 60%;
+  }
+
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "ss01", "ss02", "cv01";
+  }
+
+  h1, h2, h3 {
+    @apply font-clash;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,107,53,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,107,53,0.6); }
+
+/* ── SHOWPASS Ticket Component Styles ── */
+@layer components {
+
+  /* Noise texture overlay */
+  .noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Holographic shimmer */
+  .holographic {
+    background: linear-gradient(135deg, #FF6B35, #FFB800, #00D4AA, #7B2FBE, #FF6B35);
+    background-size: 400% 400%;
+    animation: gradientShift 4s ease infinite;
+  }
+
+  /* Ticket perforated edge */
+  .ticket-edge-left {
+    position: relative;
+  }
+  .ticket-edge-left::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: hsl(var(--background));
+    border-radius: 50%;
+    z-index: 10;
+  }
+  .ticket-edge-right {
+    position: relative;
+  }
+  .ticket-edge-right::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: hsl(var(--background));
+    border-radius: 50%;
+    z-index: 10;
+  }
+
+  /* Glass morphism */
+  .glass {
+    @apply backdrop-blur-xl border;
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .glass-dark {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(10,22,40,0.7);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Gradient text */
+  .text-gradient-accent {
+    background: linear-gradient(135deg, #FF6B35 0%, #FFB800 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-teal {
+    background: linear-gradient(135deg, #00D4AA 0%, #7B2FBE 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Dot grid pattern */
+  .dot-grid {
+    background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Line pattern */
+  .line-pattern {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      rgba(255,255,255,0.03) 8px,
+      rgba(255,255,255,0.03) 9px
+    );
+  }
+
+  /* Event card */
+  .event-card {
+    @apply relative overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer;
+    transform-style: preserve-3d;
+  }
+  .event-card:hover {
+    @apply shadow-card-hover;
+    transform: translateY(-4px);
+  }
+  .event-card:hover .event-card-img {
+    transform: scale(1.05);
+  }
+
+  /* Dashboard sidebar */
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    color: rgba(255,255,255,0.6);
+  }
+  .sidebar-link:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.08);
+  }
+  .sidebar-link.active {
+    color: #fff;
+    background: rgba(255,107,53,0.2);
+    border: 1px solid rgba(255,107,53,0.3);
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply relative overflow-hidden rounded-2xl p-5 border;
+  }
+
+  /* Input focus ring */
+  .sp-input {
+    @apply w-full px-4 py-3 rounded-xl border bg-white/5 text-foreground placeholder:text-muted-foreground;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    transition: all 0.2s;
+    background: linear-gradient(135deg, #FF6B35, #FF8A5B);
+    box-shadow: 0 4px 20px rgba(255,107,53,0.35);
+    display: inline-flex;
+    align-items: center;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(255,107,53,0.5);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* Ticker tape */
+  .ticker-wrapper {
+    @apply overflow-hidden;
+    -webkit-mask: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    mask: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+}
+
+/* ── Clash Display font via CDN ── */
+@font-face {
+  font-family: 'Clash Display';
+  src: url('https://api.fontshare.com/v2/css?f[]=clash-display@700,600,500&display=swap');
+  font-display: swap;
+}
