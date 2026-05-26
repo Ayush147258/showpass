@@ -65,7 +65,7 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
           onChange={(e) => onChange(e.target.value)}
           placeholder="Write your event description… or use AI ✨ below"
           rows={5}
-          className="w-full px-4 py-3 bg-white/4 border border-white/10 rounded-xl text-white placeholder:text-white/25 text-sm leading-relaxed focus:outline-none focus:border-accent/50 resize-none"
+          className="sp-input min-h-40 resize-none leading-relaxed"
         />
         {value && (
           <button
@@ -83,8 +83,8 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
         className={cn(
           "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all",
           showAI
-            ? "bg-purple-500/15 border-purple-500/30 text-purple-300"
-            : "bg-white/4 border-white/10 text-white/60 hover:text-white hover:bg-white/8"
+            ? "bg-purple-500/18 border-purple-300/40 text-purple-100"
+            : "bg-navy-600/70 border-white/12 text-white/70 hover:text-white hover:bg-white/8"
         )}
       >
         <Sparkles className="w-4 h-4" />
@@ -99,7 +99,7 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="bg-purple-500/8 border border-purple-500/20 rounded-2xl p-4 space-y-4">
+            <div className="bg-gradient-to-br from-purple-500/15 via-white/[0.04] to-teal-400/10 border border-purple-300/25 rounded-2xl p-4 space-y-4">
               {/* Header */}
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-purple-500/20 flex items-center justify-center">
@@ -127,8 +127,8 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
                       className={cn(
                         "p-2.5 rounded-xl border text-left transition-all",
                         tone === t.id
-                          ? "bg-accent/15 border-accent/35 text-white"
-                          : "bg-white/3 border-white/8 text-white/50 hover:border-white/20"
+                          ? "bg-accent/18 border-accent/55 text-white"
+                          : "bg-navy-600/70 border-white/12 text-white/65 hover:border-teal-300/35"
                       )}
                     >
                       <p className="text-xs font-semibold">{t.label}</p>
@@ -146,7 +146,7 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
                   onChange={(e) => setBullets(e.target.value)}
                   placeholder={"Headliner: DJ Aryan\n5000+ attendees expected\nVIP lounge with open bar\nLive art installations\nFood trucks from 20 vendors"}
                   rows={5}
-                  className="w-full px-3 py-2.5 bg-black/20 border border-white/10 rounded-xl text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-purple-500/40 resize-none font-mono"
+                  className="sp-input min-h-36 resize-none font-mono"
                 />
               </div>
 

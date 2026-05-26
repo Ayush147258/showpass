@@ -226,9 +226,28 @@
 
   /* Input focus ring */
   .sp-input {
-    @apply w-full px-4 py-3 rounded-xl border bg-white/5 text-foreground placeholder:text-muted-foreground;
+    @apply w-full rounded-xl border px-4 py-3 text-sm font-medium text-white;
     @apply transition-all duration-200;
-    @apply focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50;
+    background: rgba(255,255,255,0.075);
+    border-color: rgba(255,255,255,0.18);
+    color-scheme: dark;
+  }
+  .sp-input::placeholder {
+    color: rgba(197, 213, 245, 0.42);
+  }
+  .sp-input:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.28);
+  }
+  .sp-input:focus {
+    outline: none;
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(0,212,170,0.75);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.2), 0 0 28px rgba(0,212,170,0.08);
+  }
+  .sp-input option {
+    background: #0A1628;
+    color: #fff;
   }
 
   /* Button variants */

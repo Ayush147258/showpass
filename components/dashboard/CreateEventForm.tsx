@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import { AIDescriptionEditor } from "@/components/shared/AIDescriptionEditor";
 import {
   ChevronRight, ChevronLeft, Plus, Trash2, Upload,
-  Loader2, CheckCircle2, Zap, Globe, MapPin,
+  Loader2, CheckCircle2, Zap, Globe, Music, GraduationCap,
+  Laptop, Theater, Dumbbell, Utensils, BookOpen, Trophy, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,18 @@ const CATEGORIES = [
   { value: "OTHER", label: "✨ Other" },
 ];
 const TIER_TYPES = ["FREE", "GENERAL", "VIP", "EARLY_BIRD", "PREMIUM"];
+
+const CATEGORY_OPTIONS = [
+  { value: "MUSIC", label: "Music", Icon: Music, accent: "text-pink-300" },
+  { value: "COLLEGE_FEST", label: "College Fest", Icon: GraduationCap, accent: "text-gold-300" },
+  { value: "TECH", label: "Tech", Icon: Laptop, accent: "text-sky-300" },
+  { value: "COMEDY", label: "Comedy", Icon: Theater, accent: "text-purple-300" },
+  { value: "FITNESS", label: "Fitness", Icon: Dumbbell, accent: "text-teal-300" },
+  { value: "FOOD", label: "Food", Icon: Utensils, accent: "text-orange-300" },
+  { value: "WORKSHOP", label: "Workshop", Icon: BookOpen, accent: "text-indigo-300" },
+  { value: "SPORTS", label: "Sports", Icon: Trophy, accent: "text-lime-300" },
+  { value: "OTHER", label: "Other", Icon: Sparkles, accent: "text-accent" },
+];
 
 const EventSchema = z.object({
   title: z.string().min(5, "At least 5 characters"),
@@ -119,29 +132,30 @@ export function CreateEventForm() {
   const data = watch();
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       {/* Step progress */}
-      <div className="flex items-center gap-2 mb-8">
+      <div className="flex items-center gap-2 mb-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-ticket">
         {STEPS.map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
+          <div key={s} className="flex items-center gap-2 shrink-0">
             <button
+              type="button"
               onClick={() => i < step && setStep(i)}
               className={cn(
-                "flex items-center gap-2 text-sm font-semibold transition-all",
-                i === step ? "text-white" : i < step ? "text-teal-400 cursor-pointer" : "text-white/25"
+                "flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-semibold transition-all",
+                i === step ? "bg-white/10 text-white" : i < step ? "text-teal-300 cursor-pointer hover:bg-teal-400/10" : "text-white/35"
               )}
             >
               <div className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                i === step ? "bg-accent text-white" :
-                i < step ? "bg-teal-500 text-white" : "bg-white/10 text-white/30"
+                "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold",
+                i === step ? "bg-gradient-to-br from-accent to-gold-500 text-white" :
+                i < step ? "bg-teal-500 text-navy-900" : "bg-white/10 text-white/40"
               )}>
                 {i < step ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
               </div>
               <span className="hidden sm:block">{s}</span>
             </button>
             {i < STEPS.length - 1 && (
-              <div className={cn("w-8 h-px", i < step ? "bg-teal-500/50" : "bg-white/10")} />
+              <div className={cn("w-10 h-px", i < step ? "bg-teal-400/70" : "bg-white/12")} />
             )}
           </div>
         ))}
@@ -155,7 +169,7 @@ export function CreateEventForm() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="space-y-5"
+            className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.075] via-white/[0.045] to-teal-400/[0.035] p-5 sm:p-6 shadow-ticket space-y-5"
           >
             {/* ── Step 0: Details ── */}
             {step === 0 && (
@@ -166,22 +180,23 @@ export function CreateEventForm() {
                 </FormField>
 
                 <FormField label="Category" error={errors.category?.message} required>
-                  <div className="grid grid-cols-3 gap-2">
-                    {CATEGORIES.map((c) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {CATEGORY_OPTIONS.map(({ Icon, ...c }) => (
                       <label key={c.value} className={cn(
-                        "flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-sm",
+                        "flex min-h-14 items-center gap-3 rounded-2xl border p-3 cursor-pointer transition-all text-sm font-bold shadow-sm",
                         watch("category") === c.value
-                          ? "bg-accent/15 border-accent/35 text-white"
-                          : "bg-white/4 border-white/8 text-white/60 hover:border-white/20"
+                          ? "bg-orange-400/22 border-orange-300 text-white shadow-glow-accent/25"
+                          : "bg-white/12 border-white/35 text-white hover:bg-white/18 hover:border-teal-200/70"
                       )}>
                         <input type="radio" {...form.register("category")} value={c.value} className="hidden" />
-                        {c.label}
+                        <Icon className={cn("h-4 w-4 shrink-0", c.accent)} />
+                        <span>{c.label}</span>
                       </label>
                     ))}
                   </div>
                 </FormField>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField label="Start Date & Time" error={errors.startAt?.message} required>
                     <input type="datetime-local" {...form.register("startAt")} className="sp-input" />
                   </FormField>
@@ -190,10 +205,10 @@ export function CreateEventForm() {
                   </FormField>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 bg-white/4 border border-white/8 rounded-xl">
+                <div className="flex items-center gap-3 rounded-2xl border border-teal-300/20 bg-teal-300/8 p-4">
                   <input type="checkbox" {...form.register("isOnline")} id="isOnline"
-                    className="w-4 h-4 accent-orange-500 rounded" />
-                  <label htmlFor="isOnline" className="flex items-center gap-2 text-sm text-white/70 cursor-pointer">
+                    className="w-4 h-4 accent-teal-400 rounded" />
+                  <label htmlFor="isOnline" className="flex items-center gap-2 text-sm font-semibold text-white/80 cursor-pointer">
                     <Globe className="w-4 h-4 text-teal-400" /> This is an online event
                   </label>
                 </div>
@@ -204,7 +219,7 @@ export function CreateEventForm() {
                   </FormField>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField label="Venue Name" error={errors.venue?.message} required>
                         <input {...form.register("venue")} placeholder="NSCI Dome" className="sp-input" />
                       </FormField>
@@ -229,13 +244,13 @@ export function CreateEventForm() {
                         </button>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center h-36 rounded-xl border-2 border-dashed border-white/15 hover:border-accent/40 cursor-pointer transition-all bg-white/3 group">
+                      <label className="flex flex-col items-center justify-center h-40 rounded-2xl border-2 border-dashed border-teal-300/25 hover:border-accent/70 cursor-pointer transition-all bg-navy-600/70 group">
                         {uploadingBanner ? (
                           <Loader2 className="w-6 h-6 text-white/40 animate-spin" />
                         ) : (
                           <>
                             <Upload className="w-6 h-6 text-white/30 mb-2 group-hover:text-accent transition-colors" />
-                            <span className="text-sm text-white/40 group-hover:text-white/60">
+                            <span className="text-sm font-semibold text-white/55 group-hover:text-white/80">
                               Click to upload banner (max 10MB)
                             </span>
                             <span className="text-xs text-white/25 mt-1">JPG, PNG, WebP · 1400×600 recommended</span>
@@ -264,14 +279,14 @@ export function CreateEventForm() {
             {step === 2 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-white/70">Ticket Tiers</p>
+                  <p className="text-base font-bold text-white">Ticket Tiers</p>
                   <button type="button" onClick={() => append({ name: "", type: "GENERAL", price: 0, capacity: 50, description: "" })}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-accent/15 border border-accent/25 text-accent hover:bg-accent/25 transition-all">
-                    <Plus className="w-3.5 h-3.5" /> Add Tier
+                    className="flex items-center gap-2 rounded-xl border border-accent/45 bg-accent/16 px-4 py-2 text-sm font-bold text-orange-200 hover:bg-accent/25 transition-all">
+                    <Plus className="w-4 h-4" /> Add Tier
                   </button>
                 </div>
                 {fields.map((field, i) => (
-                  <div key={field.id} className="bg-white/3 border border-white/8 rounded-2xl p-4 space-y-3">
+                  <div key={field.id} className="rounded-3xl border border-white/14 bg-navy-600/80 p-4 sm:p-5 space-y-4 shadow-ticket">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-white/50 uppercase tracking-widest">Tier {i + 1}</p>
                       {fields.length > 1 && (
@@ -281,35 +296,35 @@ export function CreateEventForm() {
                         </button>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField label="Tier Name">
-                        <input {...form.register(`tiers.${i}.name`)} placeholder="VIP" className="sp-input text-sm" />
+                        <input {...form.register(`tiers.${i}.name`)} placeholder="General Admission" className="sp-input" />
                       </FormField>
                       <FormField label="Type">
-                        <select {...form.register(`tiers.${i}.type`)} className="sp-input text-sm">
+                        <select {...form.register(`tiers.${i}.type`)} className="sp-input">
                           {TIER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </FormField>
                       <FormField label="Price (₹)">
                         <input type="number" {...form.register(`tiers.${i}.price`)} placeholder="0"
-                          className="sp-input text-sm" min="0" />
+                          className="sp-input" min="0" />
                       </FormField>
                       <FormField label="Capacity">
                         <input type="number" {...form.register(`tiers.${i}.capacity`)} placeholder="100"
-                          className="sp-input text-sm" min="1" />
+                          className="sp-input" min="1" />
                       </FormField>
                     </div>
                     <FormField label="Description (optional)">
-                      <input {...form.register(`tiers.${i}.description`)} placeholder="What's included…"
-                        className="sp-input text-sm" />
+                      <input {...form.register(`tiers.${i}.description`)} placeholder="What's included..."
+                        className="sp-input" />
                     </FormField>
                     {watch(`tiers.${i}.type`) === "EARLY_BIRD" && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField label="Early Bird Price (₹)">
-                          <input type="number" {...form.register(`tiers.${i}.earlyBirdPrice`)} className="sp-input text-sm" />
+                          <input type="number" {...form.register(`tiers.${i}.earlyBirdPrice`)} className="sp-input" />
                         </FormField>
                         <FormField label="Offer Ends">
-                          <input type="datetime-local" {...form.register(`tiers.${i}.earlyBirdEndsAt`)} className="sp-input text-sm" />
+                          <input type="datetime-local" {...form.register(`tiers.${i}.earlyBirdEndsAt`)} className="sp-input" />
                         </FormField>
                       </div>
                     )}
@@ -321,14 +336,14 @@ export function CreateEventForm() {
             {/* ── Step 3: Review ── */}
             {step === 3 && (
               <div className="space-y-4">
-                <div className="bg-white/3 border border-white/8 rounded-2xl p-5 space-y-4">
+                <div className="bg-navy-600/80 border border-white/12 rounded-3xl p-5 space-y-4">
                   <h3 className="font-clash font-bold text-white">Review your event</h3>
                   {bannerUrl && (
                     <div className="relative w-full h-36 overflow-hidden rounded-xl">
                       <Image src={bannerUrl} alt="" fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover" />
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <ReviewItem label="Title" value={data.title} />
                     <ReviewItem label="Category" value={data.category} />
                     <ReviewItem label="Start" value={data.startAt?.replace("T", " ")} />
@@ -363,21 +378,21 @@ export function CreateEventForm() {
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/8">
+        <div className="flex items-center justify-between mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
           <button type="button" onClick={() => setStep((s) => Math.max(s - 1, 0))}
             disabled={step === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all disabled:opacity-30 text-sm font-semibold">
+            className="flex items-center gap-2 px-5 py-3 rounded-xl border border-white/14 bg-navy-600/70 text-white/65 hover:text-white hover:border-white/30 transition-all disabled:opacity-30 text-sm font-semibold">
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
 
           {step < STEPS.length - 1 ? (
             <button type="button" onClick={nextStep}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent-600 transition-all shadow-glow-accent/30">
+              className="flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-accent to-gold-500 text-white font-bold text-sm hover:brightness-110 transition-all shadow-glow-accent/30">
               Next <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
             <button type="submit" disabled={submitting}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-accent text-white font-bold text-sm hover:bg-accent-600 transition-all shadow-glow-accent disabled:opacity-50">
+              className="flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-accent text-white font-bold text-sm hover:brightness-110 transition-all shadow-glow-teal disabled:opacity-50">
               {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><Zap className="w-4 h-4" /> Create Event</>}
             </button>
           )}
