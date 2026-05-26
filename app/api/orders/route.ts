@@ -110,33 +110,32 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // For free orders, generate tickets immediately
-      if (totalAmount === 0) {
-        const tickets = [];
-        for (const item of items) {
-          const tier = tierMap.get(item.tierId)!;
-          for (let i = 0; i < item.quantity; i++) {
-            const attendee = item.attendees?.[i];
-            const ticketRef = generateTicketRef(event.slug);
-            const qrToken = await generateQRToken({
-              ticketId: ticketRef,
-              eventId,
-              tierId: item.tierId,
-              attendeeEmail: attendee?.email ?? session.user.email!,
-              issuedAt: Date.now(),
-            });
-            tickets.push({
-              orderId: newOrder.id,
-              tierId: item.tierId,
-              attendeeName: attendee?.name ?? session.user.name ?? "Attendee",
-              attendeeEmail: attendee?.email ?? session.user.email!,
-              qrCode: qrToken,
-              ticketRef,
-            });
-          }
+      const tickets = [];
+      for (const item of items) {
+        for (let i = 0; i < item.quantity; i++) {
+          const attendee = item.attendees?.[i];
+          const ticketRef = generateTicketRef(event.slug);
+          const attendeeEmail = attendee?.email ?? session.user.email!;
+          const qrToken = await generateQRToken({
+            ticketId: ticketRef,
+            eventId,
+            tierId: item.tierId,
+            attendeeEmail,
+            issuedAt: Date.now(),
+          });
+          tickets.push({
+            orderId: newOrder.id,
+            tierId: item.tierId,
+            attendeeName: attendee?.name ?? session.user.name ?? "Attendee",
+            attendeeEmail,
+            qrCode: qrToken,
+            ticketRef,
+          });
         }
-        await tx.ticket.createMany({ data: tickets });
+      }
+      await tx.ticket.createMany({ data: tickets });
 
+      if (totalAmount === 0) {
         // Update discount code usage
         if (discountCode) {
           await tx.discountCode.update({

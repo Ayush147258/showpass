@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         orderItems: { include: { tier: true } },
         event: true,
         buyer: true,
+        tickets: true,
       },
     });
 
@@ -40,33 +41,43 @@ export async function POST(req: NextRequest) {
         data: { status: "PAID", paymentId: razorpay_payment_id, paymentProvider: "razorpay" },
       });
 
-      const ticketData: {
+      let ticketData: {
         orderId: string; tierId: string; attendeeName: string;
         attendeeEmail: string; qrCode: string; ticketRef: string;
-      }[] = [];
+      }[] = order.tickets.map((ticket) => ({
+        orderId: ticket.orderId,
+        tierId: ticket.tierId,
+        attendeeName: ticket.attendeeName,
+        attendeeEmail: ticket.attendeeEmail,
+        qrCode: ticket.qrCode,
+        ticketRef: ticket.ticketRef,
+      }));
 
-      for (const item of order.orderItems) {
-        for (let i = 0; i < item.quantity; i++) {
-          const ticketRef = generateTicketRef(order.event.slug);
-          const qrToken = await generateQRToken({
-            ticketId: ticketRef,
-            eventId: order.eventId,
-            tierId: item.tierId,
-            attendeeEmail: order.buyer.email!,
-            issuedAt: Date.now(),
-          });
-          ticketData.push({
-            orderId: order.id,
-            tierId: item.tierId,
-            attendeeName: order.buyer.name ?? "Attendee",
-            attendeeEmail: order.buyer.email!,
-            qrCode: qrToken,
-            ticketRef,
-          });
+      if (ticketData.length === 0) {
+        ticketData = [];
+        for (const item of order.orderItems) {
+          for (let i = 0; i < item.quantity; i++) {
+            const ticketRef = generateTicketRef(order.event.slug);
+            const qrToken = await generateQRToken({
+              ticketId: ticketRef,
+              eventId: order.eventId,
+              tierId: item.tierId,
+              attendeeEmail: order.buyer.email!,
+              issuedAt: Date.now(),
+            });
+            ticketData.push({
+              orderId: order.id,
+              tierId: item.tierId,
+              attendeeName: order.buyer.name ?? "Attendee",
+              attendeeEmail: order.buyer.email!,
+              qrCode: qrToken,
+              ticketRef,
+            });
+          }
         }
-      }
 
-      await tx.ticket.createMany({ data: ticketData });
+        await tx.ticket.createMany({ data: ticketData });
+      }
 
       // Update discount code usage if applicable
       if (order.discountCode) {
