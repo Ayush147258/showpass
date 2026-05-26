@@ -25,7 +25,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (session?.user?.email && !email) setEmail(session.user.email);
-  }, [session]);
+  }, [email, session?.user?.email]);
   const [discountCode, setDiscountCode] = useState("");
   const [discountInfo, setDiscountInfo] = useState<{ discountAmount: number; message: string } | null>(null);
   const [validatingCode, setValidatingCode] = useState(false);

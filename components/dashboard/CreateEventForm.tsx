@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -221,7 +222,7 @@ export function CreateEventForm() {
                   <div className="relative">
                     {bannerUrl ? (
                       <div className="relative rounded-xl overflow-hidden h-40 group">
-                        <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                        <Image src={bannerUrl} alt="Banner" fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover" />
                         <button type="button" onClick={() => setValue("bannerUrl", "")}
                           className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-sm font-semibold transition-all">
                           Remove
@@ -322,7 +323,11 @@ export function CreateEventForm() {
               <div className="space-y-4">
                 <div className="bg-white/3 border border-white/8 rounded-2xl p-5 space-y-4">
                   <h3 className="font-clash font-bold text-white">Review your event</h3>
-                  {bannerUrl && <img src={bannerUrl} alt="" className="w-full h-36 object-cover rounded-xl" />}
+                  {bannerUrl && (
+                    <div className="relative w-full h-36 overflow-hidden rounded-xl">
+                      <Image src={bannerUrl} alt="" fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover" />
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <ReviewItem label="Title" value={data.title} />
                     <ReviewItem label="Category" value={data.category} />

@@ -118,7 +118,7 @@ export default async function DashboardPage() {
           <h1 className="font-clash text-3xl font-bold text-white">
             Hey, {session.user.name?.split(" ")[0]} 👋
           </h1>
-          <p className="text-white/40 text-sm mt-1">Here's how your events are performing</p>
+          <p className="text-white/40 text-sm mt-1">Here&apos;s how your events are performing</p>
         </div>
         <Link
           href="/dashboard/events/new"

@@ -77,7 +77,7 @@ function AuthContent() {
             Your moment.
           </h1>
           <p className="text-white/50 text-lg leading-relaxed max-w-sm">
-            India's smartest event ticketing platform. AI-powered. QR check-in. Unique tickets every time.
+            India&apos;s smartest event ticketing platform. AI-powered. QR check-in. Unique tickets every time.
           </p>
 
           {/* Social proof */}
