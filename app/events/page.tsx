@@ -42,22 +42,27 @@ async function getEvents(searchParams: EventSearchParams) {
     ];
   }
 
-  const [events, total] = await Promise.all([
-    prisma.event.findMany({
-      where,
-      include: {
-        organiser: { select: { id: true, name: true, image: true } },
-        ticketTiers: { orderBy: { sortOrder: "asc" } },
-        _count: { select: { reviews: true } },
-      },
-      orderBy: [{ isFeatured: "desc" }, { startAt: "asc" }],
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.event.count({ where }),
-  ]);
+  try {
+    const [events, total] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        include: {
+          organiser: { select: { id: true, name: true, image: true } },
+          ticketTiers: { orderBy: { sortOrder: "asc" } },
+          _count: { select: { reviews: true } },
+        },
+        orderBy: [{ isFeatured: "desc" }, { startAt: "asc" }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.event.count({ where }),
+    ]);
 
-  return { events, total, page, pages: Math.ceil(total / limit) };
+    return { events, total, page, pages: Math.ceil(total / limit) };
+  } catch (error) {
+    console.error("Failed to load events", error);
+    return { events: [], total: 0, page, pages: 0 };
+  }
 }
 export default async function EventsPage({ searchParams }: PageProps) {
   const sp = await searchParams;

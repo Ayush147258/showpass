@@ -13,16 +13,21 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 async function getHomeEvents() {
-  return prisma.event.findMany({
-    where: { isPublished: true },
-    include: {
-      organiser: { select: { id: true, name: true, image: true } },
-      ticketTiers: true,
-      _count: { select: { reviews: true } },
-    },
-    orderBy: [{ isFeatured: "desc" }, { startAt: "asc" }],
-    take: 8,
-  });
+  try {
+    return await prisma.event.findMany({
+      where: { isPublished: true },
+      include: {
+        organiser: { select: { id: true, name: true, image: true } },
+        ticketTiers: true,
+        _count: { select: { reviews: true } },
+      },
+      orderBy: [{ isFeatured: "desc" }, { startAt: "asc" }],
+      take: 8,
+    });
+  } catch (error) {
+    console.error("Failed to load homepage events", error);
+    return [];
+  }
 }
 
 export default async function HomePage() {

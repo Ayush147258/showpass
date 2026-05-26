@@ -14,53 +14,58 @@ export const dynamic = "force-dynamic";
 interface PageProps { params: Promise<{ slug: string }> }
 
 async function getEvent(slug: string, userId?: string) {
-  const event = await prisma.event.findUnique({
-    where: { slug },
-    include: {
-      organiser: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          organiserProfile: {
-            select: { orgName: true, logoUrl: true, bio: true, website: true, isPro: true },
+  try {
+    const event = await prisma.event.findUnique({
+      where: { slug },
+      include: {
+        organiser: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            organiserProfile: {
+              select: { orgName: true, logoUrl: true, bio: true, website: true, isPro: true },
+            },
           },
         },
+        ticketTiers: { orderBy: { sortOrder: "asc" } },
+        reviews: {
+          include: { user: { select: { id: true, name: true, image: true } } },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+        },
+        _count: { select: { reviews: true } },
       },
-      ticketTiers: { orderBy: { sortOrder: "asc" } },
-      reviews: {
-        include: { user: { select: { id: true, name: true, image: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 6,
-      },
-      _count: { select: { reviews: true } },
-    },
-  });
-  if (!event || (!event.isPublished && event.organiserId !== userId)) return null;
-
-  const avgRating = event.reviews.length > 0
-    ? event.reviews.reduce((s, r) => s + r.rating, 0) / event.reviews.length
-    : 0;
-
-  let isBookmarked = false;
-  if (userId) {
-    const bm = await prisma.bookmark.findUnique({
-      where: { userId_eventId: { userId, eventId: event.id } },
     });
-    isBookmarked = !!bm;
+    if (!event || (!event.isPublished && event.organiserId !== userId)) return null;
+
+    const avgRating = event.reviews.length > 0
+      ? event.reviews.reduce((s, r) => s + r.rating, 0) / event.reviews.length
+      : 0;
+
+    let isBookmarked = false;
+    if (userId) {
+      const bm = await prisma.bookmark.findUnique({
+        where: { userId_eventId: { userId, eventId: event.id } },
+      });
+      isBookmarked = !!bm;
+    }
+
+    const totalSold = event.ticketTiers.reduce((s, t) => s + t.sold, 0);
+    const totalCapacity = event.ticketTiers.reduce((s, t) => s + t.capacity, 0);
+
+    return {
+      ...event,
+      organiserProfile: event.organiser.organiserProfile,
+      avgRating,
+      isBookmarked,
+      totalSold,
+      totalCapacity,
+    };
+  } catch (error) {
+    console.error(`Failed to load event "${slug}"`, error);
+    return null;
   }
-
-  const totalSold = event.ticketTiers.reduce((s, t) => s + t.sold, 0);
-  const totalCapacity = event.ticketTiers.reduce((s, t) => s + t.capacity, 0);
-
-  return {
-    ...event,
-    organiserProfile: event.organiser.organiserProfile,
-    avgRating,
-    isBookmarked,
-    totalSold,
-    totalCapacity,
-  };
 }
 
 export default async function EventDetailPage({ params }: PageProps) {
