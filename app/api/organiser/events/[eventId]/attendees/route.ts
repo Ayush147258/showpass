@@ -7,6 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   const { eventId } = await params;
+  const { searchParams } = new URL(req.url);
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -22,73 +23,83 @@ export async function GET(
     const isAdmin = session.user.role === "ADMIN";
     if (!isOwner && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const [tiers, recentCheckIns] = await Promise.all([
-      prisma.ticketTier.findMany({
-        where: { eventId },
-        select: {
-          id: true, name: true, type: true, capacity: true, sold: true, price: true,
-          _count: { select: { tickets: true } },
-          tickets: { where: { isCheckedIn: true }, select: { id: true } },
-        },
-        orderBy: { sortOrder: "asc" },
-      }),
+    const checkedIn = searchParams.get("checkedIn");
+    const format = searchParams.get("format");
+    const page = Math.max(parseInt(searchParams.get("page") ?? "1", 10), 1);
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") ?? "20", 10), 1), 100);
+    const where = {
+      tier: { eventId },
+      order: { status: "PAID" as const },
+      ...(checkedIn === "true" ? { isCheckedIn: true } : {}),
+      ...(checkedIn === "false" ? { isCheckedIn: false } : {}),
+    };
+
+    const [tickets, total] = await Promise.all([
       prisma.ticket.findMany({
-        where: { tier: { eventId }, isCheckedIn: true },
+        where,
         select: {
-          id: true, attendeeName: true, attendeeEmail: true,
-          checkedInAt: true, ticketRef: true,
-          tier: { select: { name: true, type: true } },
+          id: true,
+          ticketRef: true,
+          attendeeName: true,
+          attendeeEmail: true,
+          isCheckedIn: true,
+          checkedInAt: true,
+          createdAt: true,
+          tier: { select: { name: true, type: true, price: true } },
         },
-        orderBy: { checkedInAt: "desc" },
-        take: 30,
+        orderBy: { createdAt: "desc" },
+        ...(format === "csv" ? {} : { skip: (page - 1) * limit, take: limit }),
       }),
+      prisma.ticket.count({ where }),
     ]);
 
-    const totalRegistered = tiers.reduce((s, t) => s + t._count.tickets, 0);
-    const totalCheckedIn = tiers.reduce((s, t) => s + t.tickets.length, 0);
+    const attendees = tickets.map((ticket) => ({
+      id: ticket.id,
+      ticketRef: ticket.ticketRef,
+      attendeeName: ticket.attendeeName,
+      attendeeEmail: ticket.attendeeEmail,
+      tierName: ticket.tier.name,
+      tierType: ticket.tier.type,
+      price: ticket.tier.price,
+      purchasedAt: ticket.createdAt,
+      isCheckedIn: ticket.isCheckedIn,
+      checkedInAt: ticket.checkedInAt,
+      eventTitle: event.title,
+    }));
 
-    const checkInTimeline = await prisma.checkIn.groupBy({
-      by: ["scannedAt"],
-      where: { ticket: { tier: { eventId } } },
-      _count: { id: true },
-      orderBy: { scannedAt: "asc" },
-    });
+    if (format === "csv") {
+      const header = ["Ticket Ref", "Name", "Email", "Tier", "Type", "Price", "Purchased At", "Checked In", "Checked In At"];
+      const rows = attendees.map((a) => [
+        a.ticketRef,
+        a.attendeeName,
+        a.attendeeEmail,
+        a.tierName,
+        a.tierType,
+        String(a.price),
+        new Date(a.purchasedAt).toISOString(),
+        a.isCheckedIn ? "Yes" : "No",
+        a.checkedInAt ? new Date(a.checkedInAt).toISOString() : "",
+      ]);
+      const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+      const csv = [header, ...rows].map((row) => row.map(escape).join(",")).join("\n");
 
-    const hourlyBuckets = new Map<string, number>();
-    for (const entry of checkInTimeline) {
-      const hour = new Date(entry.scannedAt);
-      hour.setMinutes(0, 0, 0);
-      const key = hour.toISOString();
-      hourlyBuckets.set(key, (hourlyBuckets.get(key) ?? 0) + entry._count.id);
+      return new NextResponse(csv, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${event.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-attendees.csv"`,
+        },
+      });
     }
-
-    const timeline = Array.from(hourlyBuckets.entries())
-      .map(([time, count]) => ({ time, count }))
-      .sort((a, b) => a.time.localeCompare(b.time));
 
     return NextResponse.json({
       success: true,
-      data: {
-        eventId: event.id, eventTitle: event.title,
-        startAt: event.startAt, endAt: event.endAt,
-        totalRegistered, totalCheckedIn,
-        checkInRate: totalRegistered > 0 ? Math.round((totalCheckedIn / totalRegistered) * 100) : 0,
-        byTier: tiers.map((t) => ({
-          tierId: t.id, tierName: t.name, tierType: t.type,
-          capacity: t.capacity, sold: t.sold,
-          registered: t._count.tickets, checkedIn: t.tickets.length,
-          revenue: t.sold * t.price,
-        })),
-        recentCheckIns: recentCheckIns.map((t) => ({
-          id: t.id, attendeeName: t.attendeeName, attendeeEmail: t.attendeeEmail,
-          tierName: t.tier.name, tierType: t.tier.type,
-          ticketRef: t.ticketRef, checkedInAt: t.checkedInAt,
-        })),
-        timeline,
-      },
+      data: attendees,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
     });
   } catch (err) {
-    console.error("[Organiser/CheckinStats]", err);
-    return NextResponse.json({ error: "Failed to fetch check-in stats" }, { status: 500 });
+    console.error("[Organiser/Attendees]", err);
+    return NextResponse.json({ error: "Failed to fetch attendees" }, { status: 500 });
   }
 }

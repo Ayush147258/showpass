@@ -5,6 +5,20 @@ import { slugify } from "@/lib/utils";
 import { z } from "zod";
 import type { EventCategory } from "@prisma/client";
 
+const optionalUrl = z.preprocess(
+  (val) => val === "" ? undefined : val,
+  z.string().url().optional()
+);
+
+const dateTimeString = z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+  message: "Invalid datetime",
+});
+
+const optionalDateTimeString = z.preprocess(
+  (val) => val === "" ? undefined : val,
+  dateTimeString.optional()
+);
+
 // GET /api/events — list with filters
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -53,16 +67,16 @@ const CreateEventSchema = z.object({
   title: z.string().min(5).max(100),
   description: z.string().min(20),
   category: z.enum(["MUSIC","COLLEGE_FEST","TECH","COMEDY","FITNESS","FOOD","WORKSHOP","SPORTS","OTHER"]),
-  startAt: z.string().datetime(),
-  endAt: z.string().datetime(),
+  startAt: dateTimeString,
+  endAt: dateTimeString,
   venue: z.string().min(3),
   city: z.string().min(2),
   address: z.string().optional(),
   lat: z.number().optional(),
   lng: z.number().optional(),
   isOnline: z.boolean().default(false),
-  onlineUrl: z.string().url().optional(),
-  bannerUrl: z.string().url().optional(),
+  onlineUrl: optionalUrl,
+  bannerUrl: optionalUrl,
   tags: z.array(z.string()).default([]),
   tiers: z.array(z.object({
     name: z.string(),
@@ -71,10 +85,23 @@ const CreateEventSchema = z.object({
     capacity: z.number().min(1),
     description: z.string().optional(),
     earlyBirdPrice: z.number().optional(),
-    earlyBirdEndsAt: z.string().datetime().optional(),
+    earlyBirdEndsAt: optionalDateTimeString,
     sortOrder: z.number().default(0),
   })).min(1),
 });
+
+async function createUniqueSlug(title: string) {
+  const base = slugify(title);
+  let slug = base;
+  let suffix = 2;
+
+  while (await prisma.event.findUnique({ where: { slug }, select: { id: true } })) {
+    slug = `${base}-${suffix}`;
+    suffix++;
+  }
+
+  return slug;
+}
 
 // POST /api/events — create event (organiser only)
 export async function POST(req: NextRequest) {
@@ -87,12 +114,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = CreateEventSchema.parse(body);
+    const slug = await createUniqueSlug(data.title);
 
     const event = await prisma.event.create({
       data: {
         organiserId: session.user.id,
         title: data.title,
-        slug: slugify(data.title),
+        slug,
         description: data.description,
         category: data.category,
         startAt: new Date(data.startAt),

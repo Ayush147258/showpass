@@ -34,7 +34,13 @@ export function AttendeeTable({ eventId }: AttendeeTableProps) {
       if (filterCheckedIn !== "all") params.set("checkedIn", filterCheckedIn);
       const res = await fetch(`/api/organiser/events/${eventId}/attendees?${params}`);
       const data = await res.json();
-      if (data.success) { setAttendees(data.data); setTotal(data.total); }
+      if (data.success && Array.isArray(data.data)) {
+        setAttendees(data.data);
+        setTotal(data.total ?? data.data.length);
+      } else {
+        setAttendees([]);
+        setTotal(0);
+      }
     } finally { setLoading(false); }
   }, [eventId, page, filterCheckedIn]);
 
@@ -83,6 +89,7 @@ export function AttendeeTable({ eventId }: AttendeeTableProps) {
         <div className="flex rounded-xl border border-white/10 overflow-hidden">
           {(["all", "true", "false"] as const).map((v) => (
             <button key={v} onClick={() => setFilterCheckedIn(v)}
+              type="button"
               className={cn("px-3 py-2 text-xs font-semibold transition-all",
                 filterCheckedIn === v ? "bg-accent text-white" : "text-white/40 hover:text-white hover:bg-white/8"
               )}>
@@ -190,10 +197,12 @@ export function AttendeeTable({ eventId }: AttendeeTableProps) {
           <span>Showing {Math.min((page - 1) * LIMIT + 1, total)}–{Math.min(page * LIMIT, total)} of {total}</span>
           <div className="flex gap-2">
             <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+              type="button"
               className="px-3 py-1.5 rounded-lg bg-white/6 disabled:opacity-30 hover:bg-white/10 transition-all">
               Previous
             </button>
             <button onClick={() => setPage((p) => p + 1)} disabled={page * LIMIT >= total}
+              type="button"
               className="px-3 py-1.5 rounded-lg bg-white/6 disabled:opacity-30 hover:bg-white/10 transition-all">
               Next
             </button>

@@ -8,6 +8,7 @@ const Schema = z.object({
   tone: z.enum(["hype", "professional", "casual"]).default("hype"),
   eventTitle: z.string().optional(),
   category: z.string().optional(),
+  variationKey: z.string().optional(),
 });
 
 const TONE_INSTRUCTIONS: Record<string, string> = {
@@ -31,6 +32,8 @@ RULES:
 - End with a call to action that creates urgency
 - Never use phrases like "Join us for" or "We are excited to present"
 - Never start with the event name
+- Do not copy the example placeholder text unless the organiser explicitly provided those exact details
+- Make each generation feel fresh, specific, and grounded in the organiser's own highlights
 - Output ONLY the description text — no title, no labels, no markdown headers
 - ${TONE_INSTRUCTIONS[body.tone]}`;
 
@@ -40,6 +43,7 @@ Event highlights provided by the organiser:
 ${body.bullets}
 
 Tone required: ${body.tone}
+Variation seed: ${body.variationKey ?? Date.now().toString()}
 
 Write the description now:`;
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { MyPostedEventActions } from "@/components/dashboard/EventActionButtons";
 import { formatCurrency, formatDateTime, EVENT_CATEGORY_LABELS } from "@/lib/utils";
 import {
   IndianRupee, Ticket, CalendarCheck, TrendingUp,
@@ -28,6 +29,7 @@ async function getDashboardData(organiserId: string) {
     recentOrders,
     dailyOrders,
     upcomingEvents,
+    myEvents,
   ] = await Promise.all([
     prisma.event.count({ where: { organiserId } }),
     prisma.order.aggregate({ where: { event: { organiserId }, status: "PAID" }, _sum: { totalAmount: true, platformFee: true }, _count: { id: true } }),
@@ -62,6 +64,20 @@ async function getDashboardData(organiserId: string) {
       orderBy: { startAt: "asc" },
       take: 5,
     }),
+    prisma.event.findMany({
+      where: { organiserId },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        category: true,
+        startAt: true,
+        isPublished: true,
+        ticketTiers: { select: { capacity: true, sold: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }),
   ]);
 
   const thisMonth = revenueThis._sum.totalAmount ?? 0;
@@ -95,6 +111,11 @@ async function getDashboardData(organiserId: string) {
     },
     chartData,
     recentOrders,
+    myEvents: myEvents.map((e) => ({
+      ...e,
+      totalSold: e.ticketTiers.reduce((s, t) => s + t.sold, 0),
+      totalCapacity: e.ticketTiers.reduce((s, t) => s + t.capacity, 0),
+    })),
     upcomingEvents: upcomingEvents.map((e) => ({
       ...e,
       totalSold: e.ticketTiers.reduce((s, t) => s + t.sold, 0),
@@ -108,7 +129,7 @@ export default async function DashboardPage() {
   if (!session?.user) redirect("/auth");
 
   const data = await getDashboardData(session.user.id);
-  const { kpis, chartData, recentOrders, upcomingEvents } = data;
+  const { kpis, chartData, recentOrders, upcomingEvents, myEvents } = data;
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
@@ -182,6 +203,55 @@ export default async function DashboardPage() {
           </div>
         </div>
         <RevenueChart data={chartData} />
+      </div>
+
+      {/* My posted events */}
+      <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/6">
+          <div>
+            <h2 className="font-clash font-bold text-white">My Posted Events</h2>
+            <p className="text-xs text-white/35 mt-0.5">View and manage the events you created</p>
+          </div>
+          <Link href="/dashboard/events/new" className="text-xs text-accent hover:underline flex items-center gap-1">
+            <Plus className="w-3 h-3" /> New
+          </Link>
+        </div>
+        {myEvents.length === 0 ? (
+          <div className="py-10 text-center text-white/25 text-sm">No posted events yet</div>
+        ) : (
+          <div className="divide-y divide-white/4">
+            {myEvents.map((event) => (
+              <div key={event.id} className="flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link href={`/dashboard/events/${event.id}`} className="text-sm font-semibold text-white hover:text-accent transition-colors">
+                      {event.title}
+                    </Link>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      event.isPublished
+                        ? "bg-teal-500/15 text-teal-400 border-teal-500/25"
+                        : "bg-gold-500/15 text-gold-500 border-gold-500/25"
+                    }`}>
+                      {event.isPublished ? "Live" : "Draft"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/35 mt-1">
+                    {format(new Date(event.startAt), "MMM d, yyyy")} {" · "}
+                    {EVENT_CATEGORY_LABELS[event.category]} {" · "}
+                    {event.totalSold}/{event.totalCapacity} seats sold
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 sm:flex-shrink-0">
+                  <Link href={`/dashboard/events/${event.id}`}
+                    className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-accent/12 border border-accent/25 text-accent hover:bg-accent/20 transition-all">
+                    Manage <ArrowRight className="w-3 h-3" />
+                  </Link>
+                  <MyPostedEventActions event={event} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

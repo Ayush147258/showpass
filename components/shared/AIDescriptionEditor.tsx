@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 interface AIDescriptionEditorProps {
   value: string;
   onChange: (val: string) => void;
+  eventTitle?: string;
+  category?: string;
 }
 
 const TONE_OPTIONS = [
@@ -16,7 +18,7 @@ const TONE_OPTIONS = [
   { id: "casual", label: "😊 Casual", desc: "Friendly, warm, conversational" },
 ];
 
-export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProps) {
+export function AIDescriptionEditor({ value, onChange, eventTitle, category }: AIDescriptionEditorProps) {
   const [bullets, setBullets] = useState("");
   const [tone, setTone] = useState("hype");
   const [loading, setLoading] = useState(false);
@@ -35,13 +37,25 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
       const res = await fetch("/api/ai/generate-description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bullets, tone }),
+        body: JSON.stringify({
+          bullets,
+          tone,
+          eventTitle,
+          category,
+          variationKey: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        }),
       });
       const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.error ?? "AI generation failed. Try again.");
+        return;
+      }
       if (data.description) {
         onChange(data.description);
         setProvider(data.provider);
-        toast.success("✨ Description generated!", { description: `Powered by ${data.provider}` });
+        toast.success("Description generated!", { description: `Powered by ${data.provider}` });
+      } else {
+        toast.error("AI did not return a description. Try different highlights.");
       }
     } catch {
       toast.error("AI generation failed. Try again.");
@@ -69,6 +83,7 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
         />
         {value && (
           <button
+            type="button"
             onClick={copy}
             className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-white/6 hover:bg-white/12 flex items-center justify-center transition-all"
           >
@@ -79,6 +94,7 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
 
       {/* AI toggle */}
       <button
+        type="button"
         onClick={() => setShowAI(!showAI)}
         className={cn(
           "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all",
@@ -122,6 +138,7 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
                 <div className="grid grid-cols-3 gap-2">
                   {TONE_OPTIONS.map((t) => (
                     <button
+                      type="button"
                       key={t.id}
                       onClick={() => setTone(t.id)}
                       className={cn(
@@ -152,6 +169,7 @@ export function AIDescriptionEditor({ value, onChange }: AIDescriptionEditorProp
 
               {/* Generate button */}
               <button
+                type="button"
                 onClick={generate}
                 disabled={loading || !bullets.trim()}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-accent text-white font-bold text-sm hover:opacity-90 transition-all shadow-glow-purple/30 disabled:opacity-50"

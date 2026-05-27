@@ -52,6 +52,49 @@ export function EventActionButtons({ event }: { event: { id: string; slug: strin
   );
 }
 
+export function MyPostedEventActions({ event }: { event: { id: string; slug: string; isPublished: boolean } }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const remove = async () => {
+    if (!window.confirm("Remove this event from public listings?")) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/events/${event.slug}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Event removed from public listings");
+        router.refresh();
+      } else {
+        toast.error(data.error ?? "Failed to remove event");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <a
+        href={`/events/${event.slug}`}
+        className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-white/6 border border-white/10 text-white/60 hover:text-white transition-all"
+      >
+        <Eye className="w-3 h-3" /> View
+      </a>
+      <button
+        type="button"
+        onClick={remove}
+        disabled={loading}
+        className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/18 transition-all disabled:opacity-50"
+      >
+        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+        Delete
+      </button>
+    </div>
+  );
+}
+
 // ── DiscountCodeManager ───────────────────────────────────────────────
 interface Code {
   id: string; code: string; type: string; value: number;

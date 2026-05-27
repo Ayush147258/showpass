@@ -271,6 +271,8 @@ export function CreateEventForm() {
                 <AIDescriptionEditor
                   value={watch("description")}
                   onChange={(v) => setValue("description", v, { shouldValidate: true })}
+                  eventTitle={watch("title")}
+                  category={watch("category")}
                 />
               </FormField>
             )}

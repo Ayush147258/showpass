@@ -46,8 +46,13 @@ function consume(provider: keyof typeof LIMITS) {
 async function callGemini(prompt: string, systemPrompt?: string): Promise<string> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash-exp",
+    model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
     systemInstruction: systemPrompt,
+    generationConfig: {
+      temperature: 0.9,
+      topP: 0.95,
+      maxOutputTokens: 900,
+    },
   });
   const result = await model.generateContent(prompt);
   return result.response.text();
